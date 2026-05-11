@@ -1,66 +1,36 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="landing-hero">
+      <div className="auth-logo">⚽</div>
+      <h1 className="landing-title">
+        Prode <span>Social</span>
+      </h1>
+      <p className="landing-subtitle">
+        No es solo un prode. Es un grupo de amigos, una sala de chat, un ring de predicciones y un bot de IA que te desafía. Todo en uno.
+      </p>
+      <div className="landing-actions">
+        <Link href="/signup" className="btn btn-primary btn-lg">Crear Cuenta</Link>
+        <Link href="/login" className="btn btn-secondary btn-lg">Iniciar Sesión</Link>
+      </div>
+      <div className="landing-features">
+        <div className="feature-card">
+          <div className="feature-icon">💬</div>
+          <div className="feature-title">Chat en Tiempo Real</div>
+          <div className="feature-desc">Cada torneo es una sala de chat grupal. Tus pronósticos, resultados y rankings viven dentro de la conversación.</div>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="feature-card">
+          <div className="feature-icon">🤖</div>
+          <div className="feature-title">IA que Compite</div>
+          <div className="feature-desc">ProdeBot analiza partidos, hace sus propios pronósticos y compite en la tabla. ¿Podés ganarle?</div>
         </div>
-      </main>
+        <div className="feature-card">
+          <div className="feature-icon">🔥</div>
+          <div className="feature-title">Rachas e Insignias</div>
+          <div className="feature-desc">Mantené tu racha diaria, desbloqueá insignias exclusivas y presumí en el grupo.</div>
+        </div>
+      </div>
     </div>
   );
 }
