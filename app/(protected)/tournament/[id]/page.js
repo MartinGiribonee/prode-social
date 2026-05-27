@@ -698,8 +698,8 @@ export default function TournamentPage({ params }) {
 
             {!pendingChampionPick ? (
               // STEP 1: Select team from grid with search
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', zIndex: 1 }}>
-                <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, zIndex: 1 }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.25rem', flexShrink: 0 }}>
                   <motion.div 
                     animate={{ y: [0, -6, 0] }} 
                     transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
@@ -721,7 +721,7 @@ export default function TournamentPage({ params }) {
                 </div>
 
                 {/* Search input */}
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                <div style={{ position: 'relative', marginBottom: '1rem', flexShrink: 0 }}>
                   <input 
                     type="text" 
                     placeholder="Buscar selección..." 
@@ -751,42 +751,45 @@ export default function TournamentPage({ params }) {
                   )}
                 </div>
 
-                {/* Team grid */}
-                <div className="champion-grid" style={{ overflowY: 'auto', flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, padding: '4px' }}>
-                  {worldCupTeams
-                    .filter(team => team.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .map(team => {
-                      const code = countryCodes[team];
-                      return (
-                        <motion.button
-                          key={team}
-                          whileHover={{ scale: 1.02, translateY: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setPendingChampionPick(team)}
-                          className="champion-card-btn"
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                            borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.06)',
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.82rem',
-                            fontWeight: 600, color: 'var(--text-primary)',
-                          }}
-                        >
-                          {code ? (
-                            <img 
-                              src={`https://flagcdn.com/w40/${code}.png`} 
-                              style={{ width: '22px', height: '15px', objectFit: 'cover', borderRadius: '2px', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} 
-                              alt="" 
-                            />
-                          ) : (
-                            <span style={{ fontSize: '1.2rem' }}>⚽</span>
-                          )}
-                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team}</span>
-                        </motion.button>
-                      );
-                    })}
+                {/* Scrollable Team Container */}
+                <div className="champion-grid" style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '4px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                    {worldCupTeams
+                      .filter(team => team.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(team => {
+                        const code = countryCodes[team];
+                        return (
+                          <motion.button
+                            key={team}
+                            whileHover={{ scale: 1.02, translateY: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setPendingChampionPick(team)}
+                            className="champion-card-btn"
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                              borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.06)',
+                              background: 'rgba(255, 255, 255, 0.02)',
+                              cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.82rem',
+                              fontWeight: 600, color: 'var(--text-primary)',
+                              width: '100%'
+                            }}
+                          >
+                            {code ? (
+                              <img 
+                                src={`https://flagcdn.com/w40/${code}.png`} 
+                                style={{ width: '22px', height: '15px', objectFit: 'cover', borderRadius: '2px', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} 
+                                alt="" 
+                              />
+                            ) : (
+                              <span style={{ fontSize: '1.2rem' }}>⚽</span>
+                            )}
+                            <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team}</span>
+                          </motion.button>
+                        );
+                      })}
+                  </div>
                   {worldCupTeams.filter(team => team.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
-                    <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       No se encontró ninguna selección
                     </div>
                   )}
