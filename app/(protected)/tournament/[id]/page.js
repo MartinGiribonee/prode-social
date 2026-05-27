@@ -310,10 +310,42 @@ export default function TournamentPage({ params }) {
   const [standings, setStandings] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [tournamentName, setTournamentName] = useState('Torneo');
+  const [inviteCode, setInviteCode] = useState('');
+  const [createdBy, setCreatedBy] = useState('');
+  const [championPick, setChampionPick] = useState(null);
+  const [showChampionModal, setShowChampionModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const messagesEndRef = useRef(null);
   const hasSyncedRef = useRef(false);
+
+  // All 48 World Cup 2026 teams
+  const worldCupTeams = [
+    'Argentina', 'Australia', 'Austria', 'Belgium', 'Bolivia', 'Brazil',
+    'Cameroon', 'Canada', 'Cape Verde', 'Chile', 'Colombia', 'Croatia',
+    'Denmark', 'Ecuador', 'Egypt', 'England', 'France', 'Germany',
+    'Honduras', 'Indonesia', 'Iran', 'Israel', 'Italy', 'Japan',
+    'Jordan', 'Mexico', 'Morocco', 'Netherlands', 'New Zealand', 'Nigeria',
+    'Norway', 'Panama', 'Paraguay', 'Peru', 'Poland', 'Portugal',
+    'Qatar', 'Saudi Arabia', 'Senegal', 'Serbia', 'South Korea', 'Spain',
+    'Sweden', 'Switzerland', 'Turkey', 'USA', 'Uruguay', 'Venezuela'
+  ];
+
+  const teamFlags = {
+    'Argentina': '🇦🇷', 'Australia': '🇦🇺', 'Austria': '🇦🇹', 'Belgium': '🇧🇪',
+    'Bolivia': '🇧🇴', 'Brazil': '🇧🇷', 'Cameroon': '🇨🇲', 'Canada': '🇨🇦',
+    'Cape Verde': '🇨🇻', 'Chile': '🇨🇱', 'Colombia': '🇨🇴', 'Croatia': '🇭🇷',
+    'Denmark': '🇩🇰', 'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴\u200d', 
+    'France': '🇫🇷', 'Germany': '🇩🇪', 'Honduras': '🇭🇳', 'Indonesia': '🇮🇩',
+    'Iran': '🇮🇷', 'Israel': '🇮🇱', 'Italy': '🇮🇹', 'Japan': '🇯🇵',
+    'Jordan': '🇯🇴', 'Mexico': '🇲🇽', 'Morocco': '🇲🇦', 'Netherlands': '🇳🇱',
+    'New Zealand': '🇳🇿', 'Nigeria': '🇳🇬', 'Norway': '🇳🇴', 'Panama': '🇵🇦',
+    'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Poland': '🇵🇱', 'Portugal': '🇵🇹',
+    'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
+    'South Korea': '🇰🇷', 'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭',
+    'Turkey': '🇹🇷', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪'
+  };
 
   const loadAll = useCallback(async () => {
     try {
@@ -329,11 +361,24 @@ export default function TournamentPage({ params }) {
 
       setMessages(data.messages || []);
       setStandings(data.members || []);
-      if (data.tournament) setTournamentName(data.tournament.name);
+      if (data.tournament) {
+        setTournamentName(data.tournament.name);
+        setInviteCode(data.tournament.invite_code || '');
+        setCreatedBy(data.tournament.created_by || '');
+      }
 
       const profileMap = {};
       (data.profiles || []).forEach(p => { profileMap[p.id] = p; });
       setProfiles(profileMap);
+
+      // Check if user has a champion pick
+      const myMembership = (data.members || []).find(m => m.user_id === user?.id);
+      if (myMembership?.champion_pick) {
+        setChampionPick(myMembership.champion_pick);
+      } else if (user) {
+        // Show champion picker modal if user hasn't picked yet
+        setShowChampionModal(true);
+      }
 
       // If no match days, auto-sync from worldcup26.ir
       if (!data.matchDays || data.matchDays.length === 0) {
@@ -439,6 +484,58 @@ export default function TournamentPage({ params }) {
     }
   };
 
+  const handleChampionPick = async (team) => {
+    try {
+      const res = await fetch('/api/tournament/champion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournamentId, userId: user.id, championTeam: team })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      setChampionPick(team);
+      setShowChampionModal(false);
+      await sendMessage(tournamentId, user.id, `🏆 Elegí a ${teamFlags[team] || '⚽'} ${team} como campeón del Mundial 2026!`, 'system', { icon: '🏆' });
+    } catch (err) {
+      console.error('Champion pick error:', err);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/tournament/${tournamentId}`;
+    const shareText = `¡Unite a mi prode del Mundial 2026! 🏆⚽\nCódigo: ${inviteCode}\n${shareUrl}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: tournamentName, text: shareText, url: shareUrl });
+      } catch (e) { /* user cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('¡Link copiado al portapapeles! 📋');
+      } catch {
+        // Fallback
+        prompt('Copiá este link para compartir:', shareText);
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const res = await fetch('/api/tournament/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournamentId, userId: user.id })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      alert(data.message);
+      router.push('/dashboard');
+    } catch (err) {
+      alert('Error al eliminar: ' + err.message);
+    }
+  };
+
   if (authLoading || !loaded) {
     return <div style={{ height: 'calc(100vh - 57px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
@@ -457,11 +554,18 @@ export default function TournamentPage({ params }) {
               <div style={{ fontSize: '1.5rem' }}>🏟️</div>
               <div>
                 <div className="chat-header-title">{tournamentName}</div>
-                <div className="chat-header-subtitle"><span className="online-dot" /> {standings.length} miembros</div>
+                <div className="chat-header-subtitle">
+                  <span className="online-dot" /> {standings.length} miembros
+                  {championPick && <span style={{ marginLeft: 8, fontSize: '0.7rem' }}>🏆 {teamFlags[championPick] || ''} {championPick}</span>}
+                </div>
               </div>
             </div>
             <div className="chat-header-actions">
               {syncing && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', animation: 'pulse-fire 1.5s ease-in-out infinite' }}>🔄 Sincronizando...</span>}
+              <button className="btn btn-sm btn-secondary" onClick={handleShare} title="Compartir">📤 Invitar</button>
+              {createdBy === user?.id && (
+                <button className="btn btn-sm" onClick={() => setShowDeleteConfirm(true)} style={{ background: 'hsla(0,70%,50%,0.15)', color: 'var(--danger)', border: '1px solid hsla(0,70%,50%,0.3)' }} title="Eliminar torneo">🗑️</button>
+              )}
             </div>
           </div>
 
@@ -518,6 +622,54 @@ export default function TournamentPage({ params }) {
         <div style={{ padding: '0 20px 80px 20px', overflowY: 'auto' }}>
           <h2 style={{ padding: '20px 0', borderBottom: '1px solid var(--glass-border)' }}>Fixture Completo</h2>
           <MatchDayTab matchDays={matchDays} />
+        </div>
+      )}
+
+      {/* Champion Picker Modal */}
+      {showChampionModal && !championPick && (
+        <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="card" style={{ maxWidth: 480, width: '92%', padding: '1.5rem', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🏆</div>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 4 }}>¿Quién será el campeón?</h3>
+              <p className="text-muted" style={{ fontSize: '0.75rem' }}>Elegí la selección que creés que va a ganar el Mundial 2026. ¡No se puede cambiar después!</p>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, padding: '4px' }}>
+              {worldCupTeams.map(team => (
+                <motion.button
+                  key={team}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleChampionPick(team)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+                    borderRadius: 10, border: '1px solid var(--glass-border)',
+                    background: 'hsla(var(--accent-hsl, 210, 100%, 60%), 0.05)',
+                    cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.82rem',
+                    fontWeight: 600, color: 'var(--text-primary)',
+                  }}
+                >
+                  <span style={{ fontSize: '1.2rem' }}>{teamFlags[team] || '⚽'}</span>
+                  {team}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
+          <div className="card" style={{ maxWidth: 380, width: '90%', padding: '2rem', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>⚠️</div>
+            <h3 style={{ marginBottom: 8 }}>¿Eliminar torneo?</h3>
+            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: 20 }}>Se eliminarán todos los pronósticos, mensajes y datos del torneo. Esta acción no se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowDeleteConfirm(false)}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, background: 'var(--danger)', color: '#fff' }} onClick={handleDelete}>🗑️ Eliminar</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -25,9 +25,9 @@ export async function GET(request) {
 
     // Fetch everything in parallel
     const [tournamentRes, matchDaysRes, membersRes, messagesRes, profilesRes] = await Promise.all([
-      supabase.from('tournaments').select('name, league_id, invite_code').eq('id', tournamentId).single(),
+      supabase.from('tournaments').select('name, league_id, invite_code, created_by').eq('id', tournamentId).single(),
       supabase.from('match_days').select('*').eq('tournament_id', tournamentId).order('day_number', { ascending: true }),
-      supabase.from('tournament_members').select('user_id, points, rank, role').eq('tournament_id', tournamentId).order('points', { ascending: false }),
+      supabase.from('tournament_members').select('user_id, points, rank, role, champion_pick').eq('tournament_id', tournamentId).order('points', { ascending: false }),
       supabase.from('messages').select('*').eq('tournament_id', tournamentId).order('created_at', { ascending: true }).limit(200),
       supabase.from('profiles').select('id, username, display_name, avatar_url, is_ai_agent'),
     ]);
