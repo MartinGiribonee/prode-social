@@ -226,11 +226,11 @@ async function updateMatchDayStatuses(supabase, tournamentId) {
 }
 
 function getLeagueId(leagueStr) {
-  const mapping = { 'world_cup': 1, 'argentina': 128, 'premier': 39, 'champions': 2 };
+  const mapping = { 'mundial': 1, 'world_cup': 1, 'argentina': 128, 'premier': 39, 'champions': 2 };
   return mapping[leagueStr] || 1;
 }
 
 function getSeason(leagueStr) {
-  if (leagueStr === 'world_cup') return 2026;
+  if (leagueStr === 'mundial' || leagueStr === 'world_cup') return 2026;
   return new Date().getFullYear();
 }

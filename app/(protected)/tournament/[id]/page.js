@@ -311,7 +311,25 @@ export default function TournamentPage({ params }) {
   const [profiles, setProfiles] = useState({});
   const [tournamentName, setTournamentName] = useState('Torneo');
   const [loaded, setLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const messagesEndRef = useRef(null);
+  const hasSyncedRef = useRef(false);
+
+  // Auto-sync fixtures from API when tournament has no match data
+  const autoSync = useCallback(async (tId) => {
+    if (hasSyncedRef.current || syncing) return;
+    hasSyncedRef.current = true;
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/football/sync?tournamentId=${tId}&leagueId=1&season=2026`);
+      const data = await res.json();
+      if (data.error) console.error('Auto-sync error:', data.error);
+      else console.log(`Auto-sync: ${data.matchesSynced} matches synced`);
+    } catch (e) {
+      console.error('Auto-sync failed:', e);
+    }
+    setSyncing(false);
+  }, [syncing]);
 
   const loadAll = useCallback(async () => {
     try {
@@ -322,22 +340,31 @@ export default function TournamentPage({ params }) {
         fetchAllProfiles(),
       ]);
       setMessages(msgs);
-      setMatchDays(mds);
       setStandings(sts);
       const profileMap = {};
       profs.forEach(p => { profileMap[p.id] = p; });
       setProfiles(profileMap);
 
-      // Get tournament name
+      // Get tournament name and league_id
       const { createClient } = await import('@/lib/supabase/client');
       const sb = createClient();
       const { data: t } = await sb.from('tournaments').select('name, league_id').eq('id', tournamentId).single();
       if (t) setTournamentName(t.name);
+
+      // If no match days exist yet, auto-sync from API
+      if (!mds || mds.length === 0) {
+        await autoSync(tournamentId);
+        // Re-fetch match days after sync
+        const newMds = await fetchMatchDays(tournamentId);
+        setMatchDays(newMds);
+      } else {
+        setMatchDays(mds);
+      }
     } catch (e) {
       console.error('Load error:', e);
     }
     setLoaded(true);
-  }, [tournamentId]);
+  }, [tournamentId, autoSync]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -418,7 +445,12 @@ export default function TournamentPage({ params }) {
   };
 
   if (authLoading || !loaded) {
-    return <div style={{ height: 'calc(100vh - 57px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ fontSize: '1.5rem' }}>⚽ Cargando chat...</div></div>;
+    return <div style={{ height: 'calc(100vh - 57px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', animation: 'pulse-fire 1.5s ease-in-out infinite' }}>⚽</div>
+        <div style={{ fontSize: '1rem', marginTop: 12, color: 'var(--text-muted)' }}>{syncing ? 'Sincronizando partidos del Mundial...' : 'Cargando...'}</div>
+      </div>
+    </div>;
   }
 
   return (
@@ -434,29 +466,7 @@ export default function TournamentPage({ params }) {
               </div>
             </div>
             <div className="chat-header-actions">
-              <button className="btn btn-sm btn-secondary" onClick={async () => {
-                try {
-                  const res = await fetch(`/api/football/sync?tournamentId=${tournamentId}&leagueId=1&season=2026`);
-                  const data = await res.json();
-                  if (data.error) throw new Error(data.error);
-                  alert(`¡Sincronización exitosa! ${data.matchDaysCreated} fechas y ${data.matchesSynced} partidos creados/actualizados en tu base de datos.`);
-                  loadAll(); // Reload from DB
-                } catch (e) { alert('Error: ' + e.message); }
-              }}>🔄 Sincronizar Fixture</button>
-              
-              <button className="btn btn-sm btn-primary" onClick={async () => {
-                try {
-                  const res = await fetch('/api/football/score', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tournamentId })
-                  });
-                  const data = await res.json();
-                  if (data.error) throw new Error(data.error);
-                  alert('✅ ' + data.message);
-                  loadAll(); // Reload everything to show new standings
-                } catch (e) { alert('Error: ' + e.message); }
-              }}>🎯 Calcular Puntos</button>
+              {syncing && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', animation: 'pulse-fire 1.5s ease-in-out infinite' }}>🔄 Sincronizando...</span>}
             </div>
           </div>
 
