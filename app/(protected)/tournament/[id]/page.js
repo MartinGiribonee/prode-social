@@ -315,6 +315,8 @@ export default function TournamentPage({ params }) {
   const [championPick, setChampionPick] = useState(null);
   const [showChampionModal, setShowChampionModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pendingChampionPick, setPendingChampionPick] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const messagesEndRef = useRef(null);
@@ -345,6 +347,21 @@ export default function TournamentPage({ params }) {
     'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
     'South Korea': '🇰🇷', 'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭',
     'Turkey': '🇹🇷', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪'
+  };
+
+  const countryCodes = {
+    'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at', 'Belgium': 'be',
+    'Bolivia': 'bo', 'Brazil': 'br', 'Cameroon': 'cm', 'Canada': 'ca',
+    'Cape Verde': 'cv', 'Chile': 'cl', 'Colombia': 'co', 'Croatia': 'hr',
+    'Denmark': 'dk', 'Ecuador': 'ec', 'Egypt': 'eg', 'England': 'gb-eng',
+    'France': 'fr', 'Germany': 'de', 'Honduras': 'hn', 'Indonesia': 'id',
+    'Iran': 'ir', 'Israel': 'il', 'Italy': 'it', 'Japan': 'jp',
+    'Jordan': 'jo', 'Mexico': 'mx', 'Morocco': 'ma', 'Netherlands': 'nl',
+    'New Zealand': 'nz', 'Nigeria': 'ng', 'Norway': 'no', 'Panama': 'pa',
+    'Paraguay': 'py', 'Peru': 'pe', 'Poland': 'pl', 'Portugal': 'pt',
+    'Qatar': 'qa', 'Saudi Arabia': 'sa', 'Senegal': 'sn', 'Serbia': 'rs',
+    'South Korea': 'kr', 'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch',
+    'Turkey': 'tr', 'USA': 'us', 'Uruguay': 'uy', 'Venezuela': 've'
   };
 
   const loadAll = useCallback(async () => {
@@ -627,33 +644,249 @@ export default function TournamentPage({ params }) {
 
       {/* Champion Picker Modal */}
       {showChampionModal && !championPick && (
-        <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="card" style={{ maxWidth: 480, width: '92%', padding: '1.5rem', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🏆</div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: 4 }}>¿Quién será el campeón?</h3>
-              <p className="text-muted" style={{ fontSize: '0.75rem' }}>Elegí la selección que creés que va a ganar el Mundial 2026. ¡No se puede cambiar después!</p>
-            </div>
-            <div style={{ overflowY: 'auto', flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, padding: '4px' }}>
-              {worldCupTeams.map(team => (
-                <motion.button
-                  key={team}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => handleChampionPick(team)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
-                    borderRadius: 10, border: '1px solid var(--glass-border)',
-                    background: 'hsla(var(--accent-hsl, 210, 100%, 60%), 0.05)',
-                    cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.82rem',
-                    fontWeight: 600, color: 'var(--text-primary)',
-                  }}
+        <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
+          {/* Custom CSS styles specifically for this modal */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .champion-grid::-webkit-scrollbar {
+              width: 6px;
+            }
+            .champion-grid::-webkit-scrollbar-track {
+              background: rgba(255, 255, 255, 0.02);
+              border-radius: 10px;
+            }
+            .champion-grid::-webkit-scrollbar-thumb {
+              background: rgba(255, 255, 255, 0.12);
+              border-radius: 10px;
+            }
+            .champion-grid::-webkit-scrollbar-thumb:hover {
+              background: rgba(255, 255, 255, 0.25);
+            }
+            .search-input-champion:focus {
+              border-color: var(--gold) !important;
+              box-shadow: 0 0 14px rgba(212, 175, 55, 0.2) !important;
+              background: rgba(255, 255, 255, 0.06) !important;
+            }
+            .champion-card-btn:hover {
+              border-color: rgba(212, 175, 55, 0.3) !important;
+              background: rgba(212, 175, 55, 0.08) !important;
+              box-shadow: 0 4px 15px rgba(212, 175, 55, 0.05);
+            }
+          ` }} />
+
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.93, y: 15 }} 
+            animate={{ opacity: 1, scale: 1, y: 0 }} 
+            className="card" 
+            style={{ 
+              maxWidth: 480, 
+              width: '92%', 
+              padding: '2rem', 
+              maxHeight: '85vh', 
+              overflow: 'hidden', 
+              display: 'flex', 
+              flexDirection: 'column',
+              background: 'rgba(18, 22, 33, 0.85)',
+              backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 50px rgba(212, 175, 55, 0.15)',
+              borderRadius: '24px',
+              position: 'relative'
+            }}
+          >
+            {/* Ambient gold glow in background */}
+            <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 220, height: 120, background: 'radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+
+            {!pendingChampionPick ? (
+              // STEP 1: Select team from grid with search
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', zIndex: 1 }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                  <motion.div 
+                    animate={{ y: [0, -6, 0] }} 
+                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                    style={{ 
+                      fontSize: '3rem', 
+                      marginBottom: 10,
+                      filter: 'drop-shadow(0 0 12px rgba(212, 175, 55, 0.5))',
+                      display: 'inline-block' 
+                    }}
+                  >
+                    🏆
+                  </motion.div>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #ffd700 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
+                    ¿Quién será el campeón?
+                  </h3>
+                  <p className="text-muted" style={{ fontSize: '0.78rem', maxWidth: '360px', margin: '0 auto', lineHeight: '1.4' }}>
+                    Elegí la selección que creés que ganará el Mundial 2026. ¡Sumarás más puntos si acertás!
+                  </p>
+                </div>
+
+                {/* Search input */}
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Buscar selección..." 
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px 12px 40px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '14px',
+                      color: '#fff',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    className="search-input-champion"
+                  />
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.95rem' }}>🔍</span>
+                  {searchTerm && (
+                    <button 
+                      onClick={() => setSearchTerm('')} 
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#fff', opacity: 0.5, cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Team grid */}
+                <div className="champion-grid" style={{ overflowY: 'auto', flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, padding: '4px' }}>
+                  {worldCupTeams
+                    .filter(team => team.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(team => {
+                      const code = countryCodes[team];
+                      return (
+                        <motion.button
+                          key={team}
+                          whileHover={{ scale: 1.02, translateY: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setPendingChampionPick(team)}
+                          className="champion-card-btn"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                            borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.06)',
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.82rem',
+                            fontWeight: 600, color: 'var(--text-primary)',
+                          }}
+                        >
+                          {code ? (
+                            <img 
+                              src={`https://flagcdn.com/w40/${code}.png`} 
+                              style={{ width: '22px', height: '15px', objectFit: 'cover', borderRadius: '2px', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} 
+                              alt="" 
+                            />
+                          ) : (
+                            <span style={{ fontSize: '1.2rem' }}>⚽</span>
+                          )}
+                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team}</span>
+                        </motion.button>
+                      );
+                    })}
+                  {worldCupTeams.filter(team => team.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                    <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      No se encontró ninguna selección
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // STEP 2: Confirm selected team
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: 1, textAlign: 'center' }}>
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', damping: 15 }}
                 >
-                  <span style={{ fontSize: '1.2rem' }}>{teamFlags[team] || '⚽'}</span>
-                  {team}
-                </motion.button>
-              ))}
-            </div>
+                  {countryCodes[pendingChampionPick] ? (
+                    <img 
+                      src={`https://flagcdn.com/w160/${countryCodes[pendingChampionPick]}.png`} 
+                      style={{ 
+                        width: '120px', 
+                        height: '80px', 
+                        objectFit: 'cover', 
+                        borderRadius: '10px', 
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(212, 175, 55, 0.2)', 
+                        marginBottom: 16,
+                        border: '2px solid rgba(255, 255, 255, 0.15)'
+                      }} 
+                      alt={pendingChampionPick} 
+                    />
+                  ) : (
+                    <div style={{ fontSize: '4rem', marginBottom: 16 }}>⚽</div>
+                  )}
+                </motion.div>
+
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gold)', marginBottom: 8 }}>
+                  {pendingChampionPick}
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500, marginBottom: 16 }}>
+                  ¿Confirmás esta selección como tu candidato a campeón?
+                </p>
+
+                <div style={{ 
+                  background: 'rgba(239, 68, 68, 0.06)', 
+                  border: '1px solid rgba(239, 68, 68, 0.15)', 
+                  padding: '12px 16px', 
+                  borderRadius: '14px', 
+                  color: '#f87171', 
+                  fontSize: '0.78rem', 
+                  margin: '0 0 24px 0', 
+                  textAlign: 'left', 
+                  display: 'flex', 
+                  gap: '10px', 
+                  alignItems: 'flex-start',
+                  maxWidth: '380px'
+                }}>
+                  <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
+                  <span><strong>¡Importante!</strong> Esta elección es definitiva y <strong>no se podrá modificar</strong>. Si tu selección sale campeona, sumarás puntos adicionales.</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: '340px' }}>
+                  <button 
+                    onClick={() => setPendingChampionPick(null)}
+                    style={{ 
+                      flex: 1, 
+                      padding: '12px', 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(255,255,255,0.08)', 
+                      background: 'rgba(255,255,255,0.03)', 
+                      color: 'var(--text-primary)', 
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.08)'}
+                    onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.03)'}
+                  >
+                    Volver
+                  </button>
+                  <button 
+                    onClick={() => handleChampionPick(pendingChampionPick)}
+                    style={{ 
+                      flex: 1, 
+                      padding: '12px', 
+                      borderRadius: '12px', 
+                      border: 'none', 
+                      background: 'linear-gradient(135deg, var(--gold), var(--gold-dim))', 
+                      color: '#000', 
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.target.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.4)'}
+                    onMouseLeave={e => e.target.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.25)'}
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       )}
