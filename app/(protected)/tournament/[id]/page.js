@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, use } from 'react';
+import { useState, useRef, useEffect, use, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchMessages, sendMessage, subscribeToMessages, fetchMatchDays, fetchStandings, fetchAllProfiles, submitPredictions } from '@/lib/supabase/db';
@@ -129,23 +129,24 @@ function StandingsTab({ standings, profiles, currentUserId, tournamentId }) {
   const [groups, setGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
 
-  useEffect(() => {
-    if (subTab === 'groups' && groups.length === 0) {
+  const handleSubTabChange = (tab) => {
+    setSubTab(tab);
+    if (tab === 'groups' && groups.length === 0) {
       setLoadingGroups(true);
-      fetch('/api/football/standings?leagueId=1&season=2022')
+      fetch('/api/football/standings?leagueId=1&season=2026')
         .then(r => r.json())
         .then(data => { if (data.groups) setGroups(data.groups); })
         .catch(e => console.error('Error fetching groups:', e))
         .finally(() => setLoadingGroups(false));
     }
-  }, [subTab, groups.length]);
+  };
 
   return (
     <div className="tab-content">
       {/* Sub-tab switcher */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
         <button
-          onClick={() => setSubTab('ranking')}
+          onClick={() => handleSubTabChange('ranking')}
           style={{
             flex: 1, padding: '10px 16px', fontSize: '0.8rem', fontWeight: 700,
             background: subTab === 'ranking' ? 'var(--accent)' : 'transparent',
@@ -156,7 +157,7 @@ function StandingsTab({ standings, profiles, currentUserId, tournamentId }) {
           👑 Ranking Amigos
         </button>
         <button
-          onClick={() => setSubTab('groups')}
+          onClick={() => handleSubTabChange('groups')}
           style={{
             flex: 1, padding: '10px 16px', fontSize: '0.8rem', fontWeight: 700,
             background: subTab === 'groups' ? 'var(--accent)' : 'transparent',
@@ -312,29 +313,7 @@ export default function TournamentPage({ params }) {
   const [loaded, setLoaded] = useState(false);
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
-    loadAll();
-  }, [user, authLoading, tournamentId]);
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!user || !loaded) return;
-    const unsub = subscribeToMessages(tournamentId, (newMsg) => {
-      setMessages(prev => {
-        if (prev.some(m => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
-    });
-    return unsub;
-  }, [user, loaded, tournamentId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, aiTyping]);
-
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     try {
       const [msgs, mds, sts, profs] = await Promise.all([
         fetchMessages(tournamentId),
@@ -358,7 +337,31 @@ export default function TournamentPage({ params }) {
       console.error('Load error:', e);
     }
     setLoaded(true);
-  };
+  }, [tournamentId]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.push('/login'); return; }
+    setTimeout(() => {
+      loadAll();
+    }, 0);
+  }, [user, authLoading, loadAll, router]);
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!user || !loaded) return;
+    const unsub = subscribeToMessages(tournamentId, (newMsg) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+    });
+    return unsub;
+  }, [user, loaded, tournamentId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, aiTyping]);
 
   const fetchAIReply = async (userMessage) => {
     setAiTyping(true);
@@ -433,7 +436,7 @@ export default function TournamentPage({ params }) {
             <div className="chat-header-actions">
               <button className="btn btn-sm btn-secondary" onClick={async () => {
                 try {
-                  const res = await fetch(`/api/football/sync?tournamentId=${tournamentId}&leagueId=1&season=2022`);
+                  const res = await fetch(`/api/football/sync?tournamentId=${tournamentId}&leagueId=1&season=2026`);
                   const data = await res.json();
                   if (data.error) throw new Error(data.error);
                   alert(`¡Sincronización exitosa! ${data.matchDaysCreated} fechas y ${data.matchesSynced} partidos creados/actualizados en tu base de datos.`);

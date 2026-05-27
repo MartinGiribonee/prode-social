@@ -14,11 +14,18 @@ export default function BottomNav() {
 
   useEffect(() => {
     if (params?.id) {
-      setLastTournamentId(params.id);
-      localStorage.setItem('lastTournamentId', params.id);
+      const id = params.id;
+      localStorage.setItem('lastTournamentId', id);
+      setTimeout(() => {
+        setLastTournamentId(id);
+      }, 0);
     } else {
       const stored = localStorage.getItem('lastTournamentId');
-      if (stored) setLastTournamentId(stored);
+      if (stored) {
+        setTimeout(() => {
+          setLastTournamentId(stored);
+        }, 0);
+      }
     }
   }, [params]);
 

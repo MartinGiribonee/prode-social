@@ -6,7 +6,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const tournamentId = searchParams.get('tournamentId');
   const leagueId = parseInt(searchParams.get('leagueId') || '1'); // Default World Cup (1)
-  const season = parseInt(searchParams.get('season') || '2022'); // Default 2022 for testing
+  const season = parseInt(searchParams.get('season') || '2026'); // Default 2026 for World Cup
   
   if (!tournamentId) {
     return NextResponse.json({ error: 'tournamentId is required' }, { status: 400 });

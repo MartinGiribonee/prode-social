@@ -39,12 +39,6 @@ export function AuthProvider({ children }) {
         if (mounted) setLoading(false);
       };
       fetchProfile();
-    } else {
-      // user is null but if we haven't loaded yet, it means no session
-      if (loading === true && user === null) {
-        // Wait, onAuthStateChange handles INITIAL_SESSION.
-        // But if there's no user, we still need to set loading to false to unlock the UI.
-      }
     }
     return () => { mounted = false; };
   }, [user]);

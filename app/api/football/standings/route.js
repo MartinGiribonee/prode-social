@@ -4,7 +4,7 @@ import { getStandings } from '@/lib/football-api';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const leagueId = parseInt(searchParams.get('leagueId') || '1');
-  const season = parseInt(searchParams.get('season') || '2022');
+  const season = parseInt(searchParams.get('season') || '2026');
 
   try {
     const groups = await getStandings(leagueId, season);

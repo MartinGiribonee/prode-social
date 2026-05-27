@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { fetchUserBadges, fetchAllBadges, fetchUserStreak } from '@/lib/supabase/db';
@@ -12,13 +12,8 @@ export default function ProfilePage() {
   const [userBadges, setUserBadges] = useState([]);
   const [streak, setStreak] = useState({ current_streak: 0, best_streak: 0 });
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
-    loadProfile();
-  }, [user, authLoading]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
+    if (!user) return;
     try {
       const [allBadges, uBadges, uStreak] = await Promise.all([
         fetchAllBadges(),
@@ -29,7 +24,15 @@ export default function ProfilePage() {
       setUserBadges(uBadges.map(ub => ub.badge_id));
       if (uStreak) setStreak(uStreak);
     } catch (e) { console.error('Profile load error:', e); }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.push('/login'); return; }
+    setTimeout(() => {
+      loadProfile();
+    }, 0);
+  }, [user, authLoading, loadProfile, router]);
 
   const handleLogout = async () => {
     try {

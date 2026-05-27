@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { fetchTournaments, fetchUserMemberships, joinTournament, joinByInviteCode, createTournament } from '@/lib/supabase/db';
@@ -18,13 +18,8 @@ export default function DashboardPage() {
   const [newDesc, setNewDesc] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
-    loadData();
-  }, [user, authLoading]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!user) return;
     try {
       const ms = await fetchUserMemberships(user.id);
       setMemberships(ms);
@@ -41,7 +36,15 @@ export default function DashboardPage() {
       console.error('Load error:', e);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.push('/login'); return; }
+    setTimeout(() => {
+      loadData();
+    }, 0);
+  }, [user, authLoading, loadData, router]);
 
   const handleJoin = async () => {
     setError('');
