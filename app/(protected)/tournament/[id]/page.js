@@ -430,7 +430,7 @@ export default function TournamentPage({ params }) {
               <div style={{ fontSize: '1.5rem' }}>🏟️</div>
               <div>
                 <div className="chat-header-title">{tournamentName}</div>
-                <div className="chat-header-subtitle"><span className="online-dot" /> {Object.keys(profiles).length} miembros</div>
+                <div className="chat-header-subtitle"><span className="online-dot" /> {standings.length} miembros</div>
               </div>
             </div>
             <div className="chat-header-actions">

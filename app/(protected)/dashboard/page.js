@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [inviteCode, setInviteCode] = useState('');
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newLeague, setNewLeague] = useState('mundial');
   const [error, setError] = useState('');
 
   const loadData = useCallback(async () => {
@@ -58,10 +59,11 @@ export default function DashboardPage() {
 
   const handleCreate = async () => {
     setError('');
+    if (!newName.trim()) { setError('El nombre es obligatorio'); return; }
     try {
-      await createTournament(newName, newDesc, 'argentina', user.id);
+      await createTournament(newName, newDesc, newLeague, user.id);
       setShowCreate(false);
-      setNewName(''); setNewDesc('');
+      setNewName(''); setNewDesc(''); setNewLeague('mundial');
       loadData();
     } catch (e) { setError(e.message); }
   };
@@ -132,12 +134,35 @@ export default function DashboardPage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowCreate(false)}>
-          <div className="card" style={{ maxWidth: 400, width: '90%', padding: '2rem' }} onClick={e => e.stopPropagation()}>
-            <h3>+ Crear Torneo</h3>
+          <div className="card" style={{ maxWidth: 440, width: '90%', padding: '2rem' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: '0.5rem' }}>+ Crear Torneo</h3>
+            <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>Creá un grupo de pronósticos y compartí el código con tus amigos</p>
             {error && <p style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>{error}</p>}
-            <input className="input" placeholder="Nombre del torneo" value={newName} onChange={e => setNewName(e.target.value)} style={{ margin: '1rem 0 0.5rem' }} />
-            <input className="input" placeholder="Descripción" value={newDesc} onChange={e => setNewDesc(e.target.value)} style={{ marginBottom: '1rem' }} />
-            <button className="btn btn-primary w-full" onClick={handleCreate}>Crear</button>
+            <input className="input" placeholder="Nombre del torneo (ej: Prode con amigos)" value={newName} onChange={e => setNewName(e.target.value)} style={{ margin: '0 0 0.75rem' }} />
+            <input className="input" placeholder="Descripción (opcional)" value={newDesc} onChange={e => setNewDesc(e.target.value)} style={{ marginBottom: '0.75rem' }} />
+            
+            {/* Competition Selector */}
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>🏆 Competición</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: '1.25rem' }}>
+              <div
+                onClick={() => setNewLeague('mundial')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                  borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
+                  border: newLeague === 'mundial' ? '2px solid var(--accent)' : '2px solid var(--glass-border)',
+                  background: newLeague === 'mundial' ? 'hsla(var(--accent-hsl), 0.1)' : 'transparent',
+                }}
+              >
+                <div style={{ fontSize: '1.8rem' }}>🏆</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Mundial 2026</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>USA, México & Canadá · 48 equipos · 72+ partidos</div>
+                </div>
+                {newLeague === 'mundial' && <div style={{ color: 'var(--accent)', fontSize: '1.2rem' }}>✓</div>}
+              </div>
+            </div>
+
+            <button className="btn btn-primary w-full" onClick={handleCreate} style={{ fontSize: '1rem', padding: '12px' }}>🚀 Crear Torneo</button>
           </div>
         </div>
       )}
