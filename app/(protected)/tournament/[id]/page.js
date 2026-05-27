@@ -5,9 +5,53 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { sendMessage, subscribeToMessages, submitPredictions } from '@/lib/supabase/db';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const teamFlags = {
+  'Argentina': '🇦🇷', 'Australia': '🇦🇺', 'Austria': '🇦🇹', 'Belgium': '🇧🇪',
+  'Bolivia': '🇧🇴', 'Brazil': '🇧🇷', 'Cameroon': '🇨🇲', 'Canada': '🇨🇦',
+  'Cape Verde': '🇨🇻', 'Chile': '🇨🇱', 'Colombia': '🇨🇴', 'Croatia': '🇭🇷',
+  'Denmark': '🇩🇰', 'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴\u200d', 
+  'France': '🇫🇷', 'Germany': '🇩🇪', 'Honduras': '🇭🇳', 'Indonesia': '🇮🇩',
+  'Iran': '🇮🇷', 'Israel': '🇮🇱', 'Italy': '🇮🇹', 'Japan': '🇯🇵',
+  'Jordan': '🇯🇴', 'Mexico': '🇲🇽', 'Morocco': '🇲🇦', 'Netherlands': '🇳🇱',
+  'New Zealand': '🇳🇿', 'Nigeria': '🇳🇬', 'Norway': '🇳🇴', 'Panama': '🇵🇦',
+  'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Poland': '🇵🇱', 'Portugal': '🇵🇹',
+  'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
+  'South Korea': '🇰🇷', 'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭',
+  'Turkey': '🇹🇷', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪'
+};
+
+const countryCodes = {
+  'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at', 'Belgium': 'be',
+  'Bolivia': 'bo', 'Brazil': 'br', 'Cameroon': 'cm', 'Canada': 'ca',
+  'Cape Verde': 'cv', 'Chile': 'cl', 'Colombia': 'co', 'Croatia': 'hr',
+  'Denmark': 'dk', 'Ecuador': 'ec', 'Egypt': 'eg', 'England': 'gb-eng',
+  'France': 'fr', 'Germany': 'de', 'Honduras': 'hn', 'Indonesia': 'id',
+  'Iran': 'ir', 'Israel': 'il', 'Italy': 'it', 'Japan': 'jp',
+  'Jordan': 'jo', 'Mexico': 'mx', 'Morocco': 'ma', 'Netherlands': 'nl',
+  'New Zealand': 'nz', 'Nigeria': 'ng', 'Norway': 'no', 'Panama': 'pa',
+  'Paraguay': 'py', 'Peru': 'pe', 'Poland': 'pl', 'Portugal': 'pt',
+  'Qatar': 'qa', 'Saudi Arabia': 'sa', 'Senegal': 'sn', 'Serbia': 'rs',
+  'South Korea': 'kr', 'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch',
+  'Turkey': 'tr', 'USA': 'us', 'Uruguay': 'uy', 'Venezuela': 've'
+};
+
 function timeAgo(dateStr) {
   const d = new Date(dateStr);
   return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+
+function formatMatchDateTime(kickOffStr) {
+  if (!kickOffStr) return 'Fecha por definir';
+  const date = new Date(kickOffStr);
+  if (isNaN(date.getTime())) return 'Fecha por definir';
+  
+  const optionsDate = { weekday: 'short', day: '2-digit', month: 'short' };
+  const optionsTime = { hour: '2-digit', minute: '2-digit', hour12: false };
+  
+  const dStr = date.toLocaleDateString('es-ES', optionsDate);
+  const tStr = date.toLocaleTimeString('es-ES', optionsTime);
+  
+  return `${dStr.charAt(0).toUpperCase() + dStr.slice(1)} • ${tStr} hs`;
 }
 
 // ─── MESSAGE BUBBLE ───
@@ -61,15 +105,23 @@ function PredictionCardInline({ metadata }) {
 }
 
 function TeamLogo({ logo, name }) {
-  if (!logo) return <div className="team-logo">⚽</div>;
-  if (logo.startsWith('http')) {
+  const code = countryCodes[name];
+  if (code) {
     return (
-      <div className="team-logo">
-        <img src={logo} alt={name} style={{ width: 40, height: 40, objectFit: 'contain' }} />
+      <div className="team-logo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 18, borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <img src={`https://flagcdn.com/w40/${code}.png`} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
     );
   }
-  return <div className="team-logo">{logo}</div>;
+  if (!logo) return <div className="team-logo" style={{ fontSize: '1.2rem', flexShrink: 0 }}>⚽</div>;
+  if (logo.startsWith('http')) {
+    return (
+      <div className="team-logo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 18, borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <img src={logo} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+    );
+  }
+  return <div className="team-logo" style={{ fontSize: '1.2rem', flexShrink: 0 }}>{logo}</div>;
 }
 
 // ─── PREDICTIONS COMPONENT ───
@@ -97,27 +149,125 @@ function PredictionsTab({ matchDays, onSubmit }) {
 
   return (
     <div className="tab-content">
-      <div className="drawer-title" style={{ marginBottom: 16 }}>📋 {activeDay.label}</div>
-      {matches.map(m => (
-        <div className="match-card" key={m.id}>
-          <div className="match-card-teams">
-            <div className="match-card-team"><TeamLogo logo={m.home_logo} name={m.home_team} /><div>{m.home_team}</div></div>
-            <div className="match-card-vs">VS</div>
-            <div className="match-card-team"><TeamLogo logo={m.away_logo} name={m.away_team} /><div>{m.away_team}</div></div>
+      <div className="drawer-title" style={{ marginBottom: 20, fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-light)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
+        📋 {activeDay.label}
+      </div>
+      
+      {matches.map(m => {
+        // Status Badge Logic
+        let statusBadge = (
+          <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(212, 175, 55, 0.12)', color: 'var(--gold)' }}>
+            Programado
+          </span>
+        );
+        if (m.status === 'live' || m.status === '1H' || m.status === '2H' || m.status === 'HT') {
+          statusBadge = (
+            <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse-fire 1s infinite' }}></span>
+              VIVO
+            </span>
+          );
+        } else if (m.status === 'finished' || m.status === 'FT') {
+          statusBadge = (
+            <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)' }}>
+              Finalizado
+            </span>
+          );
+        }
+
+        return (
+          <div 
+            key={m.id}
+            style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '16px',
+              padding: '14px 16px',
+              marginBottom: '14px',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}
+          >
+            {/* Card Header: Date/Time & Status */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.03)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                📅 {formatMatchDateTime(m.kick_off)}
+              </span>
+              {statusBadge}
+            </div>
+
+            {/* Card Body: Teams and Picker */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              {/* Home Team */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', minWidth: 0 }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                  {m.home_team}
+                </span>
+                <TeamLogo logo={m.home_logo} name={m.home_team} />
+              </div>
+
+              {/* Score Selector Widget */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.02)', padding: '4px 8px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                {/* Home controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button 
+                    onClick={() => update(m.id, 'home', -1)}
+                    style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    −
+                  </button>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--gold)', minWidth: 20, textAlign: 'center' }}>
+                    {scores[m.id]?.home || 0}
+                  </span>
+                  <button 
+                    onClick={() => update(m.id, 'home', 1)}
+                    style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    +
+                  </button>
+                </div>
+
+                <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 800, padding: '0 4px' }}>:</span>
+
+                {/* Away controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button 
+                    onClick={() => update(m.id, 'away', -1)}
+                    style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    −
+                  </button>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--gold)', minWidth: 20, textAlign: 'center' }}>
+                    {scores[m.id]?.away || 0}
+                  </span>
+                  <button 
+                    onClick={() => update(m.id, 'away', 1)}
+                    style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Away Team */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '10px', minWidth: 0 }}>
+                <TeamLogo logo={m.away_logo} name={m.away_team} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                  {m.away_team}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="score-selector">
-            <button className="score-btn" onClick={() => update(m.id, 'home', -1)}>−</button>
-            <div className="score-display">{scores[m.id]?.home || 0}</div>
-            <button className="score-btn" onClick={() => update(m.id, 'home', 1)}>+</button>
-            <div className="score-separator">-</div>
-            <button className="score-btn" onClick={() => update(m.id, 'away', -1)}>−</button>
-            <div className="score-display">{scores[m.id]?.away || 0}</div>
-            <button className="score-btn" onClick={() => update(m.id, 'away', 1)}>+</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
+
       <div style={{ marginTop: 24 }}>
-        <button className="btn btn-primary w-full btn-lg" onClick={handleSubmit}>✅ Guardar Pronósticos</button>
+        <button className="btn btn-primary w-full btn-lg" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-dim))', boxShadow: '0 4px 20px var(--accent-glow)' }} onClick={handleSubmit}>
+          ✅ Guardar Pronósticos
+        </button>
       </div>
     </div>
   );
@@ -272,22 +422,111 @@ function StandingsTab({ standings, profiles, currentUserId, tournamentId }) {
 // ─── MATCHDAY COMPONENT ───
 function MatchDayTab({ matchDays }) {
   return (
-    <div className="tab-content">
+    <div className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {matchDays.map(md => (
-        <div className="card" key={md.id} style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h4>{md.label}</h4>
-            <span className={`badge-pill ${md.status === 'finished' ? 'badge-red' : md.status === 'active' ? 'badge-green' : 'badge-gold'}`}>
+        <div key={md.id} style={{ marginBottom: 10 }}>
+          {/* Header of MatchDay */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent-light)' }}>📋 {md.label}</h3>
+            <span style={{ 
+              padding: '4px 10px', 
+              borderRadius: '999px', 
+              fontSize: '0.7rem', 
+              fontWeight: 700, 
+              background: md.status === 'finished' ? 'rgba(239, 68, 68, 0.12)' : md.status === 'active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(212, 175, 55, 0.12)', 
+              color: md.status === 'finished' ? '#f87171' : md.status === 'active' ? '#4ade80' : 'var(--gold)' 
+            }}>
               {md.status === 'finished' ? 'Finalizada' : md.status === 'active' ? 'Activa' : 'Próxima'}
             </span>
           </div>
-          {(md.matches || []).map(m => (
-            <div className="pred-match-row" key={m.id}>
-              <div className="pred-team"><TeamLogo logo={m.home_logo} name={m.home_team} /> {m.home_team}</div>
-              <div className="pred-score">{m.status === 'finished' ? `${m.home_score} - ${m.away_score}` : '— vs —'}</div>
-              <div className="pred-team away">{m.away_team} <TeamLogo logo={m.away_logo} name={m.away_team} /></div>
-            </div>
-          ))}
+
+          {/* List of Matches in this MatchDay */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {(md.matches || []).map(m => {
+              // Status Badge Logic
+              let statusBadge = null;
+              if (m.status === 'live' || m.status === '1H' || m.status === '2H' || m.status === 'HT') {
+                statusBadge = (
+                  <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 700, background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse-fire 1s infinite' }}></span>
+                    VIVO
+                  </span>
+                );
+              }
+
+              // Score box logic
+              let scoreContent = (
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  VS
+                </div>
+              );
+              if (m.status === 'finished' || m.status === 'FT') {
+                scoreContent = (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.05)', padding: '4px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{m.home_score}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>-</span>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{m.away_score}</span>
+                  </div>
+                );
+              } else if (m.status === 'live' || m.status === '1H' || m.status === '2H' || m.status === 'HT') {
+                scoreContent = (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 197, 94, 0.1)', padding: '4px 12px', borderRadius: '10px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#4ade80' }}>{m.home_score}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#4ade80' }}>-</span>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#4ade80' }}>{m.away_score}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <div 
+                  key={m.id}
+                  style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '16px',
+                    padding: '12px 16px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}
+                >
+                  {/* Top line: Date and Optional Live Badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                      📅 {formatMatchDateTime(m.kick_off)}
+                    </span>
+                    {statusBadge}
+                  </div>
+
+                  {/* Bottom line: Match layout */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    {/* Home Team */}
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, minWidth: 0 }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                        {m.home_team}
+                      </span>
+                      <TeamLogo logo={m.home_logo} name={m.home_team} />
+                    </div>
+
+                    {/* Score / VS Box */}
+                    <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center', minWidth: '60px' }}>
+                      {scoreContent}
+                    </div>
+
+                    {/* Away Team */}
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 10, minWidth: 0 }}>
+                      <TeamLogo logo={m.away_logo} name={m.away_team} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                        {m.away_team}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       ))}
     </div>
@@ -333,37 +572,6 @@ export default function TournamentPage({ params }) {
     'Qatar', 'Saudi Arabia', 'Senegal', 'Serbia', 'South Korea', 'Spain',
     'Sweden', 'Switzerland', 'Turkey', 'USA', 'Uruguay', 'Venezuela'
   ];
-
-  const teamFlags = {
-    'Argentina': '🇦🇷', 'Australia': '🇦🇺', 'Austria': '🇦🇹', 'Belgium': '🇧🇪',
-    'Bolivia': '🇧🇴', 'Brazil': '🇧🇷', 'Cameroon': '🇨🇲', 'Canada': '🇨🇦',
-    'Cape Verde': '🇨🇻', 'Chile': '🇨🇱', 'Colombia': '🇨🇴', 'Croatia': '🇭🇷',
-    'Denmark': '🇩🇰', 'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴\u200d', 
-    'France': '🇫🇷', 'Germany': '🇩🇪', 'Honduras': '🇭🇳', 'Indonesia': '🇮🇩',
-    'Iran': '🇮🇷', 'Israel': '🇮🇱', 'Italy': '🇮🇹', 'Japan': '🇯🇵',
-    'Jordan': '🇯🇴', 'Mexico': '🇲🇽', 'Morocco': '🇲🇦', 'Netherlands': '🇳🇱',
-    'New Zealand': '🇳🇿', 'Nigeria': '🇳🇬', 'Norway': '🇳🇴', 'Panama': '🇵🇦',
-    'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Poland': '🇵🇱', 'Portugal': '🇵🇹',
-    'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
-    'South Korea': '🇰🇷', 'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭',
-    'Turkey': '🇹🇷', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪'
-  };
-
-  const countryCodes = {
-    'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at', 'Belgium': 'be',
-    'Bolivia': 'bo', 'Brazil': 'br', 'Cameroon': 'cm', 'Canada': 'ca',
-    'Cape Verde': 'cv', 'Chile': 'cl', 'Colombia': 'co', 'Croatia': 'hr',
-    'Denmark': 'dk', 'Ecuador': 'ec', 'Egypt': 'eg', 'England': 'gb-eng',
-    'France': 'fr', 'Germany': 'de', 'Honduras': 'hn', 'Indonesia': 'id',
-    'Iran': 'ir', 'Israel': 'il', 'Italy': 'it', 'Japan': 'jp',
-    'Jordan': 'jo', 'Mexico': 'mx', 'Morocco': 'ma', 'Netherlands': 'nl',
-    'New Zealand': 'nz', 'Nigeria': 'ng', 'Norway': 'no', 'Panama': 'pa',
-    'Paraguay': 'py', 'Peru': 'pe', 'Poland': 'pl', 'Portugal': 'pt',
-    'Qatar': 'qa', 'Saudi Arabia': 'sa', 'Senegal': 'sn', 'Serbia': 'rs',
-    'South Korea': 'kr', 'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch',
-    'Turkey': 'tr', 'USA': 'us', 'Uruguay': 'uy', 'Venezuela': 've'
-  };
-
   const loadAll = useCallback(async () => {
     try {
       // Fetch all tournament data from server API (bypasses RLS)
