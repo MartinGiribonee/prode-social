@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, use, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchMessages, sendMessage, subscribeToMessages, fetchMatchDays, fetchStandings, fetchAllProfiles, submitPredictions } from '@/lib/supabase/db';
+import { sendMessage, subscribeToMessages, submitPredictions } from '@/lib/supabase/db';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function timeAgo(dateStr) {
@@ -315,63 +315,58 @@ export default function TournamentPage({ params }) {
   const messagesEndRef = useRef(null);
   const hasSyncedRef = useRef(false);
 
-  // Auto-sync fixtures from API when tournament has no match data
-  const autoSync = useCallback(async (tId) => {
-    if (hasSyncedRef.current || syncing) return;
-    hasSyncedRef.current = true;
-    setSyncing(true);
-    try {
-      const res = await fetch(`/api/football/sync?tournamentId=${tId}&leagueId=1&season=2026`);
-      const data = await res.json();
-      if (data.error) console.error('Auto-sync error:', data.error);
-      else console.log(`Auto-sync: ${data.matchesSynced} matches synced`);
-    } catch (e) {
-      console.error('Auto-sync failed:', e);
-    }
-    setSyncing(false);
-  }, [syncing]);
-
   const loadAll = useCallback(async () => {
     try {
-      const [msgs, mds, sts, profs] = await Promise.all([
-        fetchMessages(tournamentId),
-        fetchMatchDays(tournamentId),
-        fetchStandings(tournamentId),
-        fetchAllProfiles(),
-      ]);
-      setMessages(msgs);
-      setStandings(sts);
+      // Fetch all tournament data from server API (bypasses RLS)
+      const res = await fetch(`/api/tournament/data?tournamentId=${tournamentId}`);
+      const data = await res.json();
+      
+      if (data.error) {
+        console.error('Load error:', data.error);
+        setLoaded(true);
+        return;
+      }
+
+      setMessages(data.messages || []);
+      setStandings(data.members || []);
+      if (data.tournament) setTournamentName(data.tournament.name);
+
       const profileMap = {};
-      profs.forEach(p => { profileMap[p.id] = p; });
+      (data.profiles || []).forEach(p => { profileMap[p.id] = p; });
       setProfiles(profileMap);
 
-      // Get tournament name and league_id
-      const { createClient } = await import('@/lib/supabase/client');
-      const sb = createClient();
-      const { data: t } = await sb.from('tournaments').select('name, league_id').eq('id', tournamentId).single();
-      if (t) setTournamentName(t.name);
-
-      // If no match days exist yet, auto-sync from API
-      if (!mds || mds.length === 0) {
-        await autoSync(tournamentId);
-        // Re-fetch match days after sync
-        const newMds = await fetchMatchDays(tournamentId);
-        setMatchDays(newMds);
+      // If no match days, auto-sync from worldcup26.ir
+      if (!data.matchDays || data.matchDays.length === 0) {
+        if (!hasSyncedRef.current) {
+          hasSyncedRef.current = true;
+          setSyncing(true);
+          try {
+            const syncRes = await fetch(`/api/football/sync?tournamentId=${tournamentId}&leagueId=1&season=2026`);
+            const syncData = await syncRes.json();
+            console.log('Auto-sync result:', syncData);
+            
+            // Re-fetch match days from server after sync
+            const mdRes = await fetch(`/api/football/match-days?tournamentId=${tournamentId}`);
+            const mdData = await mdRes.json();
+            setMatchDays(mdData.matchDays || []);
+          } catch (e) {
+            console.error('Auto-sync failed:', e);
+          }
+          setSyncing(false);
+        }
       } else {
-        setMatchDays(mds);
+        setMatchDays(data.matchDays);
       }
     } catch (e) {
       console.error('Load error:', e);
     }
     setLoaded(true);
-  }, [tournamentId, autoSync]);
+  }, [tournamentId]);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.push('/login'); return; }
-    setTimeout(() => {
-      loadAll();
-    }, 0);
+    loadAll();
   }, [user, authLoading, loadAll, router]);
 
   // Realtime subscription
