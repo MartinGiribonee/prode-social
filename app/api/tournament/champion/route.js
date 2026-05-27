@@ -12,12 +12,14 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 // Ensure the champion_pick column exists
 async function ensureColumn(supabase) {
-  // Try to add column if it doesn't exist (idempotent via IF NOT EXISTS in RPC or direct SQL)
-  await supabase.rpc('exec_sql', {
-    sql: "ALTER TABLE tournament_members ADD COLUMN IF NOT EXISTS champion_pick TEXT DEFAULT NULL;"
-  }).catch(() => {
+  try {
+    // Try to add column if it doesn't exist (idempotent via IF NOT EXISTS in RPC or direct SQL)
+    await supabase.rpc('exec_sql', {
+      sql: "ALTER TABLE tournament_members ADD COLUMN IF NOT EXISTS champion_pick TEXT DEFAULT NULL;"
+    });
+  } catch (err) {
     // If RPC doesn't exist, try direct approach - the column may already exist
-  });
+  }
 }
 
 export async function GET(request) {

@@ -65,6 +65,7 @@ CREATE TABLE public.tournament_members (
   rank INTEGER DEFAULT 0,
   role TEXT DEFAULT 'member' CHECK (role IN ('admin', 'member')),
   joined_at TIMESTAMPTZ DEFAULT NOW(),
+  champion_pick TEXT DEFAULT NULL,
   UNIQUE(tournament_id, user_id)
 );
 
