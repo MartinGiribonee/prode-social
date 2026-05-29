@@ -128,11 +128,23 @@ function TeamLogo({ logo, name }) {
 
 // ─── PREDICTIONS COMPONENT ───
 function PredictionsTab({ matchDays, onSubmit }) {
-  const activeDay = matchDays.find(md => md.status === 'active') || matchDays[0];
+  const [selectedDayIdx, setSelectedDayIdx] = useState(() => {
+    const activeIdx = matchDays.findIndex(md => md.status === 'active');
+    return activeIdx >= 0 ? activeIdx : 0;
+  });
+
+  const activeDay = matchDays[selectedDayIdx];
   const matches = activeDay?.matches || [];
-  const [scores, setScores] = useState(() =>
-    Object.fromEntries(matches.map(m => [m.id, { home: 0, away: 0 }]))
-  );
+
+  const [scores, setScores] = useState(() => {
+    const initial = {};
+    matchDays.forEach(md => {
+      (md.matches || []).forEach(m => {
+        initial[m.id] = { home: 0, away: 0 };
+      });
+    });
+    return initial;
+  });
 
   const update = (id, side, delta) => {
     setScores(prev => ({ ...prev, [id]: { ...prev[id], [side]: Math.max(0, (prev[id]?.[side] || 0) + delta) } }));
@@ -151,8 +163,26 @@ function PredictionsTab({ matchDays, onSubmit }) {
 
   return (
     <div className="tab-content">
-      <div className="drawer-title" style={{ marginBottom: 20, fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-light)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
-        📋 {activeDay.label}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
+        <button 
+          onClick={() => setSelectedDayIdx(i => Math.max(0, i - 1))}
+          disabled={selectedDayIdx === 0}
+          className="btn btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+        >
+          ← Anterior
+        </button>
+        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-light)', textAlign: 'center' }}>
+          📋 {activeDay.label}
+        </div>
+        <button 
+          onClick={() => setSelectedDayIdx(i => Math.min(matchDays.length - 1, i + 1))}
+          disabled={selectedDayIdx === matchDays.length - 1}
+          className="btn btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+        >
+          Siguiente →
+        </button>
       </div>
       
       {matches.map(m => {
