@@ -133,6 +133,22 @@ function PredictionsTab({ matchDays, onSubmit }) {
     return activeIdx >= 0 ? activeIdx : 0;
   });
 
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const activeDay = matchDays[selectedDayIdx];
   const matches = activeDay?.matches || [];
 
@@ -171,25 +187,107 @@ function PredictionsTab({ matchDays, onSubmit }) {
         >
           ‹
         </button>
-        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)', height: '48px' }}>
-          <select 
-            value={selectedDayIdx} 
-            onChange={(e) => setSelectedDayIdx(Number(e.target.value))}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 2 }}
+        <div ref={dropdownRef} style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)', height: '48px' }}>
+          <button 
+            onClick={() => setIsOpen(prev => !prev)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px', 
+              fontSize: '0.95rem', 
+              fontWeight: 600, 
+              color: 'var(--text-primary)', 
+              background: 'transparent',
+              border: 'none',
+              width: '100%',
+              height: '100%',
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            {matchDays.map((md, idx) => {
-              const label = md.label.includes('Fecha') && !md.label.includes('Grupos') ? `Grupos - ${md.label}` : md.label;
-              return (
-                <option key={md.id} value={idx} style={{ color: '#000' }}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', pointerEvents: 'none' }}>
             {activeDay.label.includes('Fecha') && !activeDay.label.includes('Grupos') ? `Grupos - ${activeDay.label}` : activeDay.label}
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>▼</span>
-          </div>
+            <motion.span 
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'inline-block' }}
+            >
+              ▼
+            </motion.span>
+          </button>
+          
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute',
+                  top: '105%',
+                  left: 0,
+                  right: 0,
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  zIndex: 10,
+                  maxHeight: '250px',
+                  overflowY: 'auto',
+                  padding: '6px'
+                }}
+              >
+                {matchDays.map((md, idx) => {
+                  const label = md.label.includes('Fecha') && !md.label.includes('Grupos') ? `Grupos - ${md.label}` : md.label;
+                  const isSelected = idx === selectedDayIdx;
+                  return (
+                    <button
+                      key={md.id}
+                      onClick={() => {
+                        setSelectedDayIdx(idx);
+                        setIsOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        textAlign: 'center',
+                        background: isSelected ? 'var(--accent)' : 'transparent',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: isSelected ? '#fff' : 'var(--text-primary)',
+                        fontSize: '0.875rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        marginBottom: '4px',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      {label}
+                      {isSelected && <span style={{ fontSize: '0.8rem' }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <button 
           onClick={() => setSelectedDayIdx(i => Math.min(matchDays.length - 1, i + 1))}
