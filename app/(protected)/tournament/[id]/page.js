@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const teamFlags = {
   'Argentina': '🇦🇷', 'Australia': '🇦🇺', 'Austria': '🇦🇹', 'Belgium': '🇧🇪',
   'Bolivia': '🇧🇴', 'Brazil': '🇧🇷', 'Cameroon': '🇨🇲', 'Canada': '🇨🇦',
-  'Cape Verde': '🇨🇻', 'Chile': '🇨🇱', 'Colombia': '🇨🇴', 'Croatia': '🇭🇷',
+  'Cape Verde': '🇨🇻', 'Colombia': '🇨🇴', 'Croatia': '🇭🇷', 'Czech Republic': '🇨🇿',
   'Denmark': '🇩🇰', 'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴\u200d', 
   'France': '🇫🇷', 'Germany': '🇩🇪', 'Honduras': '🇭🇳', 'Indonesia': '🇮🇩',
   'Iran': '🇮🇷', 'Israel': '🇮🇱', 'Italy': '🇮🇹', 'Japan': '🇯🇵',
@@ -17,13 +17,14 @@ const teamFlags = {
   'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Poland': '🇵🇱', 'Portugal': '🇵🇹',
   'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
   'South Korea': '🇰🇷', 'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭',
-  'Turkey': '🇹🇷', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪'
+  'Turkey': '🇹🇷', 'United States': '🇺🇸', 'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪',
+  'USA': '🇺🇸', 'Czechia': '🇨🇿'
 };
 
 const countryCodes = {
   'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at', 'Belgium': 'be',
   'Bolivia': 'bo', 'Brazil': 'br', 'Cameroon': 'cm', 'Canada': 'ca',
-  'Cape Verde': 'cv', 'Chile': 'cl', 'Colombia': 'co', 'Croatia': 'hr',
+  'Cape Verde': 'cv', 'Colombia': 'co', 'Croatia': 'hr', 'Czech Republic': 'cz',
   'Denmark': 'dk', 'Ecuador': 'ec', 'Egypt': 'eg', 'England': 'gb-eng',
   'France': 'fr', 'Germany': 'de', 'Honduras': 'hn', 'Indonesia': 'id',
   'Iran': 'ir', 'Israel': 'il', 'Italy': 'it', 'Japan': 'jp',
@@ -32,7 +33,8 @@ const countryCodes = {
   'Paraguay': 'py', 'Peru': 'pe', 'Poland': 'pl', 'Portugal': 'pt',
   'Qatar': 'qa', 'Saudi Arabia': 'sa', 'Senegal': 'sn', 'Serbia': 'rs',
   'South Korea': 'kr', 'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch',
-  'Turkey': 'tr', 'USA': 'us', 'Uruguay': 'uy', 'Venezuela': 've'
+  'Turkey': 'tr', 'United States': 'us', 'Uruguay': 'uy', 'Venezuela': 've',
+  'USA': 'us', 'Czechia': 'cz'
 };
 
 function timeAgo(dateStr) {
@@ -203,7 +205,7 @@ function PredictionsTab({ matchDays, onSubmit }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               {/* Home Team */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', minWidth: 0 }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', color: 'var(--text-primary)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                   {m.home_team}
                 </span>
                 <TeamLogo logo={m.home_logo} name={m.home_team} />
@@ -255,7 +257,7 @@ function PredictionsTab({ matchDays, onSubmit }) {
               {/* Away Team */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '10px', minWidth: 0 }}>
                 <TeamLogo logo={m.away_logo} name={m.away_team} />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', color: 'var(--text-primary)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                   {m.away_team}
                 </span>
               </div>
@@ -504,7 +506,7 @@ function MatchDayTab({ matchDays }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     {/* Home Team */}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, minWidth: 0 }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'right', color: 'var(--text-primary)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                         {m.home_team}
                       </span>
                       <TeamLogo logo={m.home_logo} name={m.home_team} />
@@ -518,7 +520,7 @@ function MatchDayTab({ matchDays }) {
                     {/* Away Team */}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 10, minWidth: 0 }}>
                       <TeamLogo logo={m.away_logo} name={m.away_team} />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, textAlign: 'left', color: 'var(--text-primary)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                         {m.away_team}
                       </span>
                     </div>
@@ -564,13 +566,13 @@ export default function TournamentPage({ params }) {
   // All 48 World Cup 2026 teams
   const worldCupTeams = [
     'Argentina', 'Australia', 'Austria', 'Belgium', 'Bolivia', 'Brazil',
-    'Cameroon', 'Canada', 'Cape Verde', 'Chile', 'Colombia', 'Croatia',
+    'Cameroon', 'Canada', 'Cape Verde', 'Colombia', 'Croatia', 'Czech Republic',
     'Denmark', 'Ecuador', 'Egypt', 'England', 'France', 'Germany',
     'Honduras', 'Indonesia', 'Iran', 'Israel', 'Italy', 'Japan',
     'Jordan', 'Mexico', 'Morocco', 'Netherlands', 'New Zealand', 'Nigeria',
     'Norway', 'Panama', 'Paraguay', 'Peru', 'Poland', 'Portugal',
     'Qatar', 'Saudi Arabia', 'Senegal', 'Serbia', 'South Korea', 'Spain',
-    'Sweden', 'Switzerland', 'Turkey', 'USA', 'Uruguay', 'Venezuela'
+    'Sweden', 'Switzerland', 'Turkey', 'United States', 'Uruguay', 'Venezuela'
   ];
   const loadAll = useCallback(async () => {
     try {
