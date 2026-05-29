@@ -61,10 +61,15 @@ export default function DashboardPage() {
     setError('');
     if (!newName.trim()) { setError('El nombre es obligatorio'); return; }
     try {
-      await createTournament(newName, newDesc, newLeague, user.id);
+      const t = await createTournament(newName, newDesc, newLeague, user.id);
       setShowCreate(false);
       setNewName(''); setNewDesc(''); setNewLeague('mundial');
-      loadData();
+      // Navigate directly to fixture tab so the user can see the schedule
+      if (t?.id) {
+        router.push(`/tournament/${t.id}?tab=fixture`);
+      } else {
+        loadData();
+      }
     } catch (e) { setError(e.message); }
   };
 
