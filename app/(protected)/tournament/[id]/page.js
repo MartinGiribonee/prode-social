@@ -163,25 +163,40 @@ function PredictionsTab({ matchDays, onSubmit }) {
 
   return (
     <div className="tab-content">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <button 
           onClick={() => setSelectedDayIdx(i => Math.max(0, i - 1))}
           disabled={selectedDayIdx === 0}
-          className="btn btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+          style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: selectedDayIdx === 0 ? 'var(--text-muted)' : 'var(--danger)', cursor: selectedDayIdx === 0 ? 'default' : 'pointer', fontSize: '1.4rem', padding: 0 }}
         >
-          ← Anterior
+          ‹
         </button>
-        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-light)', textAlign: 'center' }}>
-          📋 {activeDay.label}
+        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)', height: '48px' }}>
+          <select 
+            value={selectedDayIdx} 
+            onChange={(e) => setSelectedDayIdx(Number(e.target.value))}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 2 }}
+          >
+            {matchDays.map((md, idx) => {
+              const label = md.label.includes('Fecha') && !md.label.includes('Grupos') ? `Grupos - ${md.label}` : md.label;
+              return (
+                <option key={md.id} value={idx} style={{ color: '#000' }}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', pointerEvents: 'none' }}>
+            {activeDay.label.includes('Fecha') && !activeDay.label.includes('Grupos') ? `Grupos - ${activeDay.label}` : activeDay.label}
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>▼</span>
+          </div>
         </div>
         <button 
           onClick={() => setSelectedDayIdx(i => Math.min(matchDays.length - 1, i + 1))}
           disabled={selectedDayIdx === matchDays.length - 1}
-          className="btn btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+          style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: selectedDayIdx === matchDays.length - 1 ? 'var(--text-muted)' : 'var(--danger)', cursor: selectedDayIdx === matchDays.length - 1 ? 'default' : 'pointer', fontSize: '1.4rem', padding: 0 }}
         >
-          Siguiente →
+          ›
         </button>
       </div>
       
